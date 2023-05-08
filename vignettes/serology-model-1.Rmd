@@ -1,12 +1,12 @@
 ---
-title: "Malaria Serology"
+title: "Model for age-structured malaria serology data"
 author: "Nick Reich"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
 ```
 
 ## Problem set-up
@@ -29,14 +29,12 @@ The above model assumes that $Y_i$ is drawn from a mixture distribution where $G
 
 ### Derivation of annual probability of infection
 
-The discrete, annual probability of infection in year $t$ is assumed to takes values from a continuous logistic function of the form:
-$$ s(t) =  \alpha_l + \frac{\alpha_u-\alpha_l}{1+\beta e^{-\gamma t}}. $$
-In this formulation, $\alpha_u$ and $\alpha_l$ are the upper and lower asymptotes of the logistic function, corresponding to the probability of infection prior to and after malaria eradication efforts.
-Additionally, $\beta$ is a parameter that shifts the curve's transition earlier or later in time, and $\gamma$ is a parameter that governs the steepness of the transition. 
+The discrete, annual probability of infection in year $t$ is assumed to takes values from a continuous function defined as a spline:
+$$ s(t) =  B \cdot \beta. $$
 
-This formulation makes many oversimplifying assumptions. It assumes that there is a true annual probability of infection that varied smoothly and monotonically over time. It parameterizes a more continuous ``force of infection'' parameter as a single discrete probability of infection in a given year (ignoring possibilities of multiple infections in a year). It assumes that the probabilities of infection from one year to the next for an individual are independent, which seems unlikely, given that some individuals may have higher risks during some times of their lives. It assumes no spatial heterogeneity across locations. 
+This formulation makes many oversimplifying assumptions. It assumes that there is a true annual probability of infection that varied smoothly over time and that this probability is shared for everyone in the population. It parameterizes a more continuous ``force of infection'' parameter as a single discrete probability of infection in a given year (ignoring possibilities of multiple infections in a year). It assumes that the probabilities of infection from one year to the next for an individual are independent, which seems unlikely, given that some individuals may have higher risks during some times of their lives. It assumes no spatial heterogeneity across locations. 
 
-We will specify priors on the function the dictate that it will start at a high value and decrease to a low value, representing our prior knowledge that malaria was endemic in Lao and then became nearly eradicated by the 2020s. 
+We will specify priors on the spline coefficients that suggest the function will start at a high value and decrease to a low value, representing our prior knowledge that malaria was endemic in Lao and then became nearly eradicated by the 2020s. 
 
 Given the above, we define
 
@@ -47,3 +45,120 @@ Given the above, we define
  & = & 1 - \prod_{k=0}^{a_i} \left (1- P(\mbox{person $i$ infected $k$ years ago})\right ) \\
  & = & 1 - \prod_{k=0}^{a_i} \left ( 1 - s(T - k) \right ) 
 \end{eqnarray*}
+
+### A simulated example
+
+This section walks through an example of simulating data and fitting a Stan model to the data. Note that the data generation model is virtually identical to the model used to fit the data. 
+
+Start by loading the necessary packages:
+```{r}
+library(cmdstanr)
+library(posterior)
+library(splines)
+library(tidyverse)
+
+```
+
+Read in and show the stan model
+```{r, cache=TRUE}
+mdl <- cmdstan_model(stan_file = "../code/serology-model.stan")
+```
+
+
+Here we set up a simulation to create a single dataset with 500 observations.
+```{r}
+N <- 500       ## num of observations
+age <- rnbinom(N, mu=30, size=5)
+maxage <- max(age)+1
+n_basis <- 3
+time_vec <- seq.int(maxage)
+B <- bs(time_vec, df = n_basis)
+
+set.seed(103)
+
+## draw parameters from prior distributions
+mu0 <- rnorm(1, log(3), 0.2)
+mu1 <- rnorm(1, log(7), 0.2)
+sigma0 <- rlnorm(1, 0, .1)
+sigma1 <- rlnorm(1, 0, .1)
+beta <- rnorm(3, c(1, 0, -3), 0.5)
+
+## compute the transformations of parameters
+Svals <- boot::inv.logit(B %*% beta)
+pi <- rep(NA, N)
+for(j in 1:N) {
+  pi[j] = 1 - prod(1-Svals[(maxage - age[j]+1):maxage])
+}
+
+## simulate the data
+z <- rbinom(N, 1, pi)
+y <- (1-z)*rlnorm(N, mu0, sigma0) + z*rlnorm(N, mu1, sigma1)
+
+```
+
+Here are some plots to confirm that the data look like we think they should look.
+
+For example, this plot shows the smooth function representing the "probability of infection in a given year'' as a function of time, with the year in which the study was conducted at the right hand side of the plot.
+```{r}
+plot(Svals, ylim=c(0,1))
+```
+
+
+
+And this plot shows that the probability of infection increases with age.
+```{r}
+plot(age, pi, ylim=c(0,1))
+```
+
+
+Now we fit the model to the data and extract some summary statistics from the fit.
+```{r, results='hide'}
+fit <- mdl$sample(data = list(N = N, ## num observations
+                              y = y,   
+                              age = age,  
+                              maxage = maxage,
+                              B = B),
+                  chains=4,
+                  parallel_chains=4)
+
+## summarizing data and pi estimates
+pi_samples <- as_draws_matrix(fit$draws("pi")) |> 
+  apply(MARGIN = 2, FUN=function(x) quantile(x, probs=c(0.1, 0.5, 0.9))) |> 
+  t()
+colnames(pi_samples) <- c("q10", "q50", "q90")
+dat <- tibble(y, z, age, pi) |> 
+  bind_cols(pi_samples)
+
+## summarizing posteriors of the group means
+mu0_samples <- as_draws_matrix(fit$draws("mu0")) |> 
+  apply(MARGIN = 2, FUN=function(x) quantile(x, probs=c(0.1, 0.5, 0.9)))|> 
+  t()
+colnames(mu0_samples) <- c("q10", "q50", "q90")
+mu1_samples <- as_draws_matrix(fit$draws("mu1")) |> 
+  apply(MARGIN = 2, FUN=function(x) quantile(x, probs=c(0.1, 0.5, 0.9)))|> 
+  t()
+colnames(mu1_samples) <- c("q10", "q50", "q90")
+mu_ests <- tibble(z = 0:1, mu = c(mu0, mu1)) |> 
+  bind_cols(rbind(mu0_samples, mu1_samples))
+```
+
+The following plot shows the actual probabilities of ever being infected as a function of age (black points) and the model estimated probabilities with 80% posterior intervals.
+```{r}
+ggplot(dat, aes(x=age)) +
+  geom_point(aes(y=pi)) +
+  geom_point(aes(y=q50), col="red", alpha=.1) +
+  geom_segment(aes(y=q10, yend=q90, xend=age), alpha=.1, col="red")
+```
+
+And this plot shows the data (on log scale) by group (0 is never infected, 1 is ever infected), red x is the true mean for that group, the blue vertical bar is the 80% posterior credible interval for the parameter with the median at the blue hashmark.
+```{r}
+ggplot(dat, aes(x=factor(z))) + 
+  geom_boxplot(aes(y=y)) + 
+  scale_y_log10() +
+  geom_point(data=mu_ests, aes(y=exp(q50)), color="blue", shape=3, size=2) +
+  geom_segment(data=mu_ests, aes(y=exp(q10), yend=exp(q90), xend=factor(z)), col="blue", linewidth=2) +
+  geom_point(data=mu_ests, aes(y=exp(mu)), color="red", shape=4) 
+```
+
+
+
