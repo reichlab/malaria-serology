@@ -110,6 +110,13 @@ And this plot shows that the probability of infection increases with age.
 plot(age, pi, ylim=c(0,1))
 ```
 
+```{r, include=FALSE, echo=FALSE}
+## for showing y as a function of age
+age_cat <- cut(age, breaks = seq(0, 100, 10))
+boxplot(log(y)~age_cat)
+```
+
+
 
 Now we fit the model to the data and extract some summary statistics from the fit.
 ```{r, results='hide'}
