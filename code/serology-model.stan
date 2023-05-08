@@ -9,11 +9,12 @@
 
 // The input data 
 data {
-  int<lower=0> N;
-  vector[N] y;
-  array[N] int age;
-  int<lower=0> T;
-  int year0;
+  int<lower=0> N;    // number of observations
+  vector[N] y;       // observed levels of a particular marker
+  array[N] int age;  // observed ages
+  int<lower=0> T;    // the year in which data was collected
+  int year0;         // the year which should be treated as "timezero" in the logistic function 
+
 }
 
 transformed data{
