@@ -1,0 +1,49 @@
+---
+title: "Malaria Serology"
+author: "Nick Reich"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem set-up
+
+Let $y_i$ be a a single measured marker of one particular malaria antibody from a serology run on person $i$. Additionally, let $a_i$ be the age of person $i$. Assume that all observations were collected in year $T$. We have around 5,000 observations on individuals from Lao.
+
+We are interested in using the observed data on age and the marker to infer both a possible temporal transition from high malaria transmission in Lao to low transmission. Additionally, we would like to probabilistically classify each individual into one of two classes of ``ever infected'' or ``never infected''.
+
+Let $f(a, t|\theta)$ be a function that takes a person's age ($a$) in  year ($t$) and computes an estimated probability that an individual was ever infected. In essence, $f(\cdot)$, is some function of the force of infection over time. Prior knowledge suggests that infection rates in Lao were high until the 1980s or 1990s, when the infection rate started to drop. The infection rate in the early 2020s is nearly zero.
+
+A possible model for the data is:
+\begin{eqnarray*}
+Y_i  & \sim & \pi_i \cdot G_1 + (1-\pi_i) \cdot G_0 \\
+G_0 & \sim & LogNormal(\mu_0, \sigma_0) \\
+G_1 & \sim & LogNormal(\mu_1, \sigma_1) \\
+\pi_i & = & 1 - \prod_{k=0}^{a_i} \left ( 1 - s(T - k) \right ) 
+\end{eqnarray*}
+
+The above model assumes that $Y_i$ is drawn from a mixture distribution where $G_0$ and $G_1$ represent the distributions of antibody values among the never infected and ever infected individuals, respectively. The probability $\pi_i$ that an individual has ever been infected is computed based on an assumed annual probability of infection (see details and derivation below). **NOTE: Maybe we want to define $\pi$ as following a Beta distribution with expectation as derived here. This would allow observations a bit more flexibility to not fit this rigid model.**
+
+### Derivation of annual probability of infection
+
+The discrete, annual probability of infection in year $t$ is assumed to takes values from a continuous logistic function of the form:
+$$ s(t) =  \alpha_l + \frac{\alpha_u-\alpha_l}{1+\beta e^{-\gamma t}}. $$
+In this formulation, $\alpha_u$ and $\alpha_l$ are the upper and lower asymptotes of the logistic function, corresponding to the probability of infection prior to and after malaria eradication efforts.
+Additionally, $\beta$ is a parameter that shifts the curve's transition earlier or later in time, and $\gamma$ is a parameter that governs the steepness of the transition. 
+
+This formulation makes many oversimplifying assumptions. It assumes that there is a true annual probability of infection that varied smoothly and monotonically over time. It parameterizes a more continuous ``force of infection'' parameter as a single discrete probability of infection in a given year (ignoring possibilities of multiple infections in a year). It assumes that the probabilities of infection from one year to the next for an individual are independent, which seems unlikely, given that some individuals may have higher risks during some times of their lives. It assumes no spatial heterogeneity across locations. 
+
+We will specify priors on the function the dictate that it will start at a high value and decrease to a low value, representing our prior knowledge that malaria was endemic in Lao and then became nearly eradicated by the 2020s. 
+
+Given the above, we define
+
+\begin{eqnarray*}
+\pi_i  & = & P(\mbox{person $i$ infected at least once}) \\
+ & = & 1 - P(\mbox{person $i$ never infected}) \\
+ & = & 1 - \prod_{k=0}^{a_i} P(\mbox{person $i$ not infected $k$ years ago}) \\
+ & = & 1 - \prod_{k=0}^{a_i} \left (1- P(\mbox{person $i$ infected $k$ years ago})\right ) \\
+ & = & 1 - \prod_{k=0}^{a_i} \left ( 1 - s(T - k) \right ) 
+\end{eqnarray*}
