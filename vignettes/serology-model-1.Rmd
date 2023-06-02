@@ -9,13 +9,32 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE, message=FALSE)
 ```
 
-## Problem set-up
+# Problem set-up
 
 Let $y_i$ be a a single measured marker of one particular malaria antibody from a serology run on person $i$. Additionally, let $a_i$ be the age of person $i$. Assume that all observations were collected in year $T$. We have around 5,000 observations on individuals from Lao.
 
-We are interested in using the observed data on age and the marker to infer both a possible temporal transition from high malaria transmission in Lao to low transmission. Additionally, we would like to probabilistically classify each individual into one of two classes of ``ever infected'' or ``never infected''.
+We are interested in using the observed data on age and the marker to infer both a possible temporal transition from high malaria transmission in Lao to low transmission. Additionally, we would like to probabilistically classify each individual into one of two classes of ''ever infected'' or ''never infected''.
 
-Let $f(a, t|\theta)$ be a function that takes a person's age ($a$) in  year ($t$) and computes an estimated probability that an individual was ever infected. In essence, $f(\cdot)$, is some function of the force of infection over time. Prior knowledge suggests that infection rates in Lao were high until the 1980s or 1990s, when the infection rate started to drop. The infection rate in the early 2020s is nearly zero.
+Prior research suggests that malaria infection rates in Lao were high until the 1980s or 1990s, when the infection rate started to drop. The infection rate in the early 2020s is nearly zero.
+
+# Data
+
+Describe the training data set
+
+Exploratory plots: histograms of individual markers, boxplots by 10-year age groups, log(marker) vs age scatterplots
+
+
+# Models
+
+## Finite mixture model
+
+Define
+
+fit to PvAMA1 and PfAMA1 (try t-distribution instead of normal?)
+
+check goodness of fit
+
+## Force-of-infection model
 
 A possible model for the data is:
 \begin{eqnarray*}
@@ -46,7 +65,14 @@ Given the above, we define
  & = & 1 - \prod_{k=0}^{a_i} \left ( 1 - s(T - k) \right ) 
 \end{eqnarray*}
 
-### A simulated example
+## Logistic regression with age
+
+## Logistic regression with age and PCA
+
+
+# Simulated examples 
+
+## FOI model: a simulated example
 
 This section walks through an example of simulating data and fitting a Stan model to the data. Note that the data generation model is virtually identical to the model used to fit the data. 
 
