@@ -70,3 +70,16 @@ mu_ests <- tibble(z = 0:1, mu = c(mu0, mu1)) |>
 ggplot(dat, aes(x=age)) +
   geom_point(aes(y=q50), col="red", alpha=.1) +
   geom_segment(aes(y=q10, yend=q90, xend=age), alpha=.1, col="red")
+
+## plotting svals from the FOI model
+Svals_samples <- as_draws_matrix(fit2$draws("Svals")) |> 
+  apply(MARGIN = 2, FUN=function(x) quantile(x, probs=c(0.1, 0.5, 0.9))) |> 
+  t() 
+colnames(Svals_samples) <- c("q10", "q50", "q90")
+Svals_qs <- tibble(yr= 1:nrow(Svals_samples)) |> 
+  bind_cols(Svals_samples)
+
+ggplot(Svals_qs, aes(x=yr)) +
+  geom_point(aes(y=q50)) +
+  geom_segment(aes(y=q10, yend=q90, xend=yr)) +
+  ylim(0,1)
