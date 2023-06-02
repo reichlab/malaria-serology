@@ -51,9 +51,9 @@ model {
   mu1 ~ normal(log(7), 0.4); // log-scale mean of ever infecteds
   sigma0 ~ lognormal(0, .1);
   sigma1 ~ lognormal(0, .1);
-  beta[1] ~ normal(1, 0.5);  // inv_logit(1) = 0.73
-  beta[2] ~ normal(0, 0.5);  // inv_logit(0) = 0.5
-  beta[3] ~ normal(-3, 0.5);  // inv_logit(-3) = 0.05
+  beta[1] ~ normal(0, 2);  // inv_logit(1) = 0.73
+  beta[2] ~ normal(0, 2);  // inv_logit(0) = 0.5
+  beta[3] ~ normal(0, 2);  // inv_logit(-3) = 0.05
 
   for(n in 1:N) {
     target += log_mix(pi[n],
