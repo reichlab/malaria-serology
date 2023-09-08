@@ -5,7 +5,7 @@ library(tidyverse)
 
 training_data <- read.csv("datasets/training_serology_sample.csv")
 
-mdl <- cmdstan_model(stan_file = "code/finite-mixture.stan")
+mdl <- cmdstan_model(stan_file = "code/finite-mixture-weibull.stan")
 N <- nrow(training_data)     ## num of observations
 K = 2 #number of categories (clusters)
 
@@ -19,7 +19,29 @@ fit <- mdl$sample(data = list(N = N, ## num observations
 shinystan::launch_shinystan(fit)
 
 
-hist(log(training_data$PvAMA1), breaks = 100)
+## for extracting ordered gamma params
+tmp <- as_draws_matrix(fit$draws(c("alpha", "beta", "theta"))) |> 
+  data.frame() |> 
+  mutate(meanA = alpha.1./beta.1.,
+         meanB = alpha.2./beta.2.,
+         low_alpha = ifelse(meanA<meanB, alpha.1., alpha.2.),
+         high_alpha = ifelse(meanA<meanB, alpha.2., alpha.1.),
+         low_beta = ifelse(meanA<meanB, beta.1., beta.2.),
+         high_beta = ifelse(meanA<meanB, beta.2., beta.1.),
+         low_theta = ifelse(meanA<meanB, theta.1., theta.2.),
+         high_theta = ifelse(meanA<meanB, theta.2., theta.1.))
+mean_params <- colMeans(tmp)  
+
+hist(log(training_data$PvAMA1), breaks = 100, freq=FALSE)
+#curve(dgamma(x, ,2.6)*0.5 +dnorm(x, 5, 2.4)*0.5, add=TRUE)
+curve(dgamma(x, shape=mean_params["low_alpha"], rate=mean_params["low_beta"])*mean_params["low_theta"], add=TRUE, col="blue")
+curve(dgamma(x, shape=mean_params["high_alpha"], rate=mean_params["high_beta"])*mean_params["high_theta"], add=TRUE, col="red")
+
+hist(log(training_data$PvAMA1), breaks = 100, freq=FALSE)
+curve(dnorm(x, 2.9,0.7)*0.3 +dnorm(x, 4.1,0.7)*0.3 + dnorm(x, 6,1.6)*0.4, add=TRUE)
+curve(dnorm(x, 2.9,0.7)*0.3, add=TRUE, col="blue")
+curve(dnorm(x, 4.1,0.7)*0.3, add=TRUE, col="red")
+curve(dnorm(x, 6,1.6)*0.4, add=TRUE, col="green")
 
 
 # model with age 
