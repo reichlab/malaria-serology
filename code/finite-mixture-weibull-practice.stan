@@ -31,7 +31,7 @@ transformed parameters{
       lps[k] += weibull_lpdf(y[n] | shape[k], scale[k]);
     }
     log_like[n] += log_sum_exp(lps); //store target for use in LOO IC
-    //prob_noinfection[n] = log_theta[1] +  weibull_lpdf(y[n] | shape[1], scale[1]) - log_like(n));
+    prob_noinfection[n] = log_theta[1] +  weibull_lpdf(y[n] | shape[1], scale[1]) - log_like(n);
     
   }
 }
@@ -40,6 +40,6 @@ model {
   scale ~ lognormal(0, 2);
   shape ~ lognormal(0, 2);
   
-  target = sum(log_like);
+  target += sum(log_like);
  
 }

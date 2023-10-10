@@ -87,3 +87,8 @@ print(loo_k3)
 
 loo_compare(loo_k2, loo_k3)
 
+
+
+# for extracting probability of no infection
+
+
