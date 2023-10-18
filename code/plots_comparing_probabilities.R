@@ -4,9 +4,7 @@
 library(tidyverse)
 library(betareg)
 
-calls_per_person <- read.csv("datasets/training_data_marker_calls.csv")
-
-
+calls_per_person <- read.csv("datasets/entire_data_marker_calls.csv")
 
 
 #graph of Pv data 
@@ -117,12 +115,6 @@ ggplot(merge_data, aes(x = AGE, y = prob_noinfect_PvAMA1 )) +
   geom_line(aes(y = predict(m4_rSex, merge_data),
                 colour = "m4_rSex", linetype = "m4_rSex")) +
   theme_bw()
-
-
-
-
-
-
 
 
 

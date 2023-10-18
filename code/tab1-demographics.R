@@ -5,8 +5,10 @@
 library(tidyverse)
 library(table1)
 
-calls_per_person <- read.csv("datasets/training_data_marker_calls.csv")
+#calls_per_person <- read.csv("datasets/training_data_marker_calls.csv")
 
+individuals_wSerology <- read.csv("/Users/ecramer/Desktop/Lover Lab /N-Lao-Serology/datasets/Epi_seropos_merge.csv") %>%
+  select(BARCODE, PvAMA1, PvMSP119, PfAMA1, PfMSP119, AGE)
 
 raw_demo_data <- read.csv("datasets/Parademo_individual_master_v15a.csv") %>% 
   select(id_individual, id_HH, district_id, pcr_result, pcr_species, BARCODE = barcode, sex = q4, occupation = q7a, village_id, hohh_id, agebands, fever, ITN_coverage_bin) %>%
@@ -32,12 +34,14 @@ raw_demo_data <- read.csv("datasets/Parademo_individual_master_v15a.csv") %>%
 
 
 
-merge_data <- calls_per_person %>%
-  left_join(raw_demo_data)
+merge_data <- individuals_wSerology %>%
+  left_join(raw_demo_data) %>% 
+  filter(AGE > 1)
 
 
 
-table1(~AGE + pcr_result + pcr_species + sex + occupation_agg + factor(fever) + ITN_coverage_bin | District, data = merge_data)
+table1(~agebands +  sex + occupation_agg + factor(fever) + ITN_coverage_bin + 
+         pcr_result + pcr_species | District, data = merge_data)
 
 
 
