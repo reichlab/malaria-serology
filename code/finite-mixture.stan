@@ -18,12 +18,12 @@ parameters {
 
 model {
   vector[K] log_theta = log(theta);  // cache log calculation
-  sigma ~ lognormal(0, 2);
-  mu ~ normal(0, 10);
+  sigma ~ lognormal(0, 2);  #specifying priors 
+  mu ~ normal(0, 10); #specifying prior
   for (n in 1:N) {
     vector[K] lps = log_theta;
     for (k in 1:K) {
-      lps[k] += normal_lpdf(y[n] | mu[k], sigma[k]);
+      lps[k] += normal_lpdf(y[n] | mu[k], sigma[k]); #part of model with posteriors 
     }
     target += log_sum_exp(lps);
   }

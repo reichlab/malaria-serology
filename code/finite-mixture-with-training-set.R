@@ -5,9 +5,12 @@ library(tidyverse)
 
 training_data <- read.csv("datasets/training_serology_sample.csv")
 
-mdl <- cmdstan_model(stan_file = "code/finite-mixture-weibull.stan")
+mdl <- cmdstan_model(stan_file = "code/finite-mixture-gamma.stan")
+
 N <- nrow(training_data)     ## num of observations
 K = 2 #number of categories (clusters)
+
+X<-model.matrix(~x1*x2,dat)
 
 
 fit <- mdl$sample(data = list(N = N, ## num observations
@@ -43,6 +46,10 @@ curve(dnorm(x, 2.9,0.7)*0.3, add=TRUE, col="blue")
 curve(dnorm(x, 4.1,0.7)*0.3, add=TRUE, col="red")
 curve(dnorm(x, 6,1.6)*0.4, add=TRUE, col="green")
 
+hist(log(training_data$PvAMA1), breaks = 100, freq = FALSE)
+curve(dnorm(x, 3.3, 0.5)*.3, add=TRUE)
+curve(dnorm(x, 4.9, 2)*.7, add=TRUE)
+
 
 # model with age 
 
@@ -76,6 +83,7 @@ colnames(pi_samples) <- c("q10", "q50", "q90")
 dat <- tibble(y = log(training_data$PvAMA1),   
               age = training_data$AGE) |>
   bind_cols(pi_samples)
+
 ## summarizing posteriors of the group means
 mu0_samples <- as_draws_matrix(fit2$draws("mu0")) |>
   apply(MARGIN = 2, FUN=function(x) quantile(x, probs=c(0.1, 0.5, 0.9)))|> t()
