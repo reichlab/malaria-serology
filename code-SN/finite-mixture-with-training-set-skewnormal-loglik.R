@@ -6,10 +6,9 @@ library(sn) #package for skew-normal dist.
 library(loo)
 options(mc.cores = 4)
 
-training_data <- read.csv("datasets/training_serology_sample.csv")
+training_data <- read.csv("data/training_serology_sample.csv")
 
-#mdl <- cmdstan_model(stan_file = "code/finite-mixture-skewnormal-loglik.stan")
-mdl <- cmdstan_model(stan_file = "code/finite-mixture-skewnormal-informative.stan")
+mdl <- cmdstan_model(stan_file = "code-SN/finite-mixture-skewnormal-loglik.stan")
 N <- nrow(training_data)     ## num of observations
 
 ## k = alpha = shape
