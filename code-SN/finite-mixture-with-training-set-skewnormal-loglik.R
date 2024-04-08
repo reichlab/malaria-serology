@@ -11,15 +11,13 @@ training_data <- read.csv("data/training_serology_sample.csv")
 mdl <- cmdstan_model(stan_file = "code-SN/finite-mixture-skewnormal-loglik.stan")
 N <- nrow(training_data)     ## num of observations
 
-## k = alpha = shape
-## lambda = sigma = scale
 
-## for extracting weibull params, K=2
+## for extracting skew-normal params, K=2
 fit_k2 <- mdl$sample(data = list(N = N, ## num observations
                                  y = log(training_data$PvAMA1),   
                                  K = 2),
                      chains=4,
-                     parallel_chains=4) #, adapt_delta = 0.99
+                     parallel_chains=4) 
 
 #shinystan::launch_shinystan(fit_k2)
 #fit_k2$cmdstan_diagnose()
@@ -48,7 +46,7 @@ for(i in 1:500){
 }
 
 
-## for extracting weibull params, K=3
+## for extracting skew-normal params, K=3
 fit_k3 <- mdl$sample(data = list(N = N, ## num observations
                                  y = log(training_data$PvAMA1), 
                                  K = 3),
