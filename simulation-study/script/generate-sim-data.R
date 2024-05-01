@@ -28,6 +28,6 @@ d_sn <- sim_serodata_random_effect(sample_size, times, birth_times,
                                    prob_infection_fun = s,
                                    dist = "sn", 6, 1, 1, 2, 1.75, 4
 )
-save(d_sn, file = paste0("simulation-study/simulated-datasets/simulated_data-", i, ".rds"))
+saveRDS(d_sn, file = paste0("simulation-study/simulated-datasets/simulated_data-", i, ".rds"))
 }
 
