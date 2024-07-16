@@ -8,6 +8,7 @@
   code reference: https://mc-stan.org/users/documentation/case-studies/splines_in_stan.html
 */
 
+
 data {
   int<lower=1> K;          // number of mixture components
   int<lower=1> N;          // number of data points
