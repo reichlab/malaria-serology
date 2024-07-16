@@ -7,7 +7,7 @@
 data {
   int<lower=1> K;          // number of mixture components
   int<lower=1> N;          // number of data points
-  array[N] real y;         // observations
+  array[N] real<lower=0> y;         // observations
 }
 
 // xi = location (real)
