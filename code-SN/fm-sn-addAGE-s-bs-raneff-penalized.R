@@ -71,3 +71,4 @@ for (i in 1:nrow(draws_s_hat_sample)) {
   ss <- s_hat_sample %>% mutate(time = 1:100)
   lines(ss$time, ss$s_hat, lwd=2, add=TRUE, col=alpha("lightblue", 0.4))
 }
+

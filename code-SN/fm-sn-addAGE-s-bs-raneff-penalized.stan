@@ -34,6 +34,7 @@ parameters {
   real<lower=0> tau; 
 }
 
+
 // add transformed_parameters 
 transformed parameters{
   row_vector[num_basis] w; // weights for basis functions in B
